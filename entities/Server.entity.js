@@ -4,7 +4,6 @@ const socketIO = require('socket.io');
 const mongoose = require('mongoose');
 const { join } = require('path');
 
-
 class Server {
     constructor() {
         this._app = express();

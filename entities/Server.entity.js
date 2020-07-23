@@ -3,6 +3,9 @@ const http = require('http');
 const socketIO = require('socket.io');
 const mongoose = require('mongoose');
 const { join } = require('path');
+const fileUpload = require('express-fileupload');
+
+const rootDir = require('../utils/rootDir');
 
 class Server {
     constructor() {
@@ -10,7 +13,12 @@ class Server {
         this._httpServer = http.createServer(this._app);
         this._app.use(express.json());
         this._app.use(express.urlencoded({ extended: true }));
-        this._app.use(express.static(join(__dirname, 'public')));
+        this._app.use(express.static(join(rootDir, 'public')));
+        this._app.use('/icons', express.static(join(rootDir, 'icons')));
+        this._app.use(fileUpload({
+            useTempFiles: true,
+            tempFileDir : '/tmp/'
+        }));
     }
 
     static init() {

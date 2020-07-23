@@ -38,10 +38,19 @@ class NotFoundError extends Error {
     }
 }
 
+class InvalidFileTypeError extends Error {
+    constructor(message) {
+        super();
+        this.message = message || 'Invalid file type';
+        this.name = 'InvalidFileTypeError';
+    }
+}
+
 module.exports = {
     UserExistsError,
     InternalServerError,
     InvalidEmailOrPasswordError,
     InvalidAuthorizationError,
-    NotFoundError
+    NotFoundError,
+    InvalidFileTypeError
 };

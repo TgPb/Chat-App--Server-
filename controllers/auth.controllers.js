@@ -1,19 +1,36 @@
 const User = require('../entities/User.entity');
 
 const JwtDriver = require('../entities/JwtDriver.entity');
-const { InternalServerError, InvalidAuthorizationError } = require('../entities/Errors.entities');
+const { InternalServerError, InvalidAuthorizationError, InvalidFileTypeError } = require('../entities/Errors.entities');
+
+const rootDir = require('../utils/rootDir');
 
 const authControllers = {
     signUp: async (req, res) => {
         try {
-            const { name, surname, email, password, icon } = req.body;
+            const { name, surname, email, password } = req.body;
+
+            let fileSrc;
+
+            if (req.files && Object.values(req.files).length) {
+                const { icon } = req.files;
+                const { mv, name, mimetype } = icon;
+                const imageTypes = ['image/jpeg', 'image/png'];
+
+                if (!imageTypes.includes(mimetype)) throw new InvalidFileTypeError();
+
+                const fullPath = `${rootDir}/icons/${Date.now()}${name}`;
+                fileSrc = `/icons/${Date.now()}${name}`;
+
+                await mv(fullPath);
+            }
 
             await User.signUp({
                 name,
                 surname,
                 email,
                 password,
-                icon
+                icon: fileSrc || null
             });
 
             return res.status(201).json({
@@ -23,6 +40,9 @@ const authControllers = {
             const { name } = e;
 
             switch (name) {
+                case 'InvalidFileTypeError':
+                    return res.status(400).json(e);
+
                 case 'UserUniquenessError':
                     return res.status(400).json(e);
 

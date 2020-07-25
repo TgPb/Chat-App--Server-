@@ -1,6 +1,7 @@
 const HashDriver = require('./HashDriver.entity');
 
 const UserModel = require('../dbModels/User.model');
+const ChatsModel = require('../dbModels/Chat.model');
 
 const {
     UserExistsError,
@@ -10,28 +11,18 @@ const {
 } = require('./Errors.entities');
 
 class User {
-    constructor({ id, name, surname, email, password, salt, icon }) {
-        this.id = id;
+    constructor({ _id, name, surname, email, password, salt, icon, chats }) {
+        this._id = _id;
         this.name = name;
         this.surname = surname;
         this.email = email;
         this.password = password;
         this.salt = salt;
-        this.icon = icon
+        this.icon = icon;
+        this.chats = chats;
     }
 
-    async verifyPassword(password) {
-        const hashedPassword = await HashDriver.hash(password, this.salt);
-        return hashedPassword === this.password;
-    }
-
-    static async hashPassword(password) {
-        return await HashDriver.hashPassword(password);
-    }
-
-    static async signUp(credentials) {
-        const { name, surname, email, password, icon } = credentials;
-
+    static async create({ name, surname, email, password, icon }) {
         let user;
 
         try {
@@ -42,7 +33,7 @@ class User {
 
         if (user) throw new UserExistsError();
 
-        const { hashedPassword, salt } = await User.hashPassword(password);
+        const { hashedPassword, salt } = await HashDriver.hashPassword(password);
 
         user = new UserModel({
             name,
@@ -59,23 +50,9 @@ class User {
         } catch (e) {
             throw new InternalServerError();
         }
-
-        const { _id: id } = user;
-
-        return new User({
-            id,
-            name,
-            surname,
-            email,
-            hashedPassword,
-            salt,
-            icon
-        });
     }
 
-    static async signIn(credentials) {
-        const { email, password } = credentials;
-
+    static async signIn({ email, password }) {
         let user;
 
         try {
@@ -86,40 +63,74 @@ class User {
 
         if (!user) throw new InvalidEmailOrPasswordError();
 
-        const { _id: id, name, surname, password: hashedPassword, salt, icon } = user;
+        const { _id, name, surname, password: hashedPassword, salt, icon, chats } = user;
 
         user = new User({
-            id,
+            _id,
             name,
             surname,
             email,
             password: hashedPassword,
             salt,
-            icon
+            icon,
+            chats
         });
 
-        const success = await user.verifyPassword(password);
+        const match = await user.verifyPassword(password);
 
-        if (!success) throw new InvalidEmailOrPasswordError();
+        if (!match) throw new InvalidEmailOrPasswordError();
 
         return user;
     }
 
-    static async findById(id) {
+    static async findById(_id) {
         let user;
         try {
-            user = await UserModel.findById(id);
+            user = await UserModel.findById(_id);
         } catch (e) {
             throw new InternalServerError();
         }
 
         if (!user) throw new NotFoundError('User not found');
 
-        const { name, surname, icon } = user;
+        const { name, surname, icon, chats } = user;
 
-        user = new User({ id, name, surname, icon });
+        user = new User({ _id, name, surname, icon, chats });
 
         return user;
+    }
+
+    async verifyPassword(password) {
+        const hashedPassword = await HashDriver.hash(password, this.salt);
+        return hashedPassword === this.password;
+    }
+
+    addChat(chatId) {
+        this.chats.push(chatId);
+    }
+
+    async loadChatsInfo() {
+        return await ChatsModel.find({ participants: this._id })
+            .populate({
+                path: 'participants',
+                select: {
+                    name: 1,
+                    surname: 1,
+                    _id: 1,
+                    icon: 1
+                }
+            })
+            .exec();
+    }
+
+    async save() {
+        try {
+            const { _id } = this;
+
+            await UserModel.updateOne({ _id }, this);
+        } catch (e) {
+            throw new InternalServerError();
+        }
     }
 }
 

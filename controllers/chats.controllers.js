@@ -1,3 +1,4 @@
+const JwtDriver = require('../entities/JwtDriver.entity');
 const { InternalServerError, InvalidFileTypeError } = require('../entities/Errors.entities');
 
 const rootDir = require('../utils/rootDir');
@@ -35,6 +36,22 @@ const chatsControllers = {
                     return res.status(500).json(new InternalServerError);
             }
         }
+    },
+
+    generateInvite: async (req, res) => {
+        const { _id } = req;
+        const { chatId } = req.body;
+
+        const data = {
+            to: chatId,
+            from: _id
+        };
+
+        const inviteToken = await JwtDriver.signToken(data, { expiresIn: '24h' });
+
+        res.status(201).json({
+            invite: inviteToken
+        });
     }
 }
 

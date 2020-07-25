@@ -25,7 +25,7 @@ class Server {
         return new Server();
     }
 
-    connectRoutes(routes) {
+    useRoutes(routes) {
         routes.forEach(
             route => {
                 const { url, router } = route;
@@ -34,8 +34,21 @@ class Server {
         );
     }
 
-    initSocketServer(options = {}) {
-        this._io = socketIO(this._httpServer, options);
+    async initSocketServer(options = {}) {
+        this._io = await socketIO(this._httpServer, options);
+        console.log('Socket server is listening');
+    }
+
+    useSocketNamespaces(namespaces) {
+        namespaces.forEach(
+            namespace => {
+                const { url, handler } = namespace;
+                const nsp = this._io.of(url || '/');
+                this._io.of(url || '/').on('connect', socket => {
+                    handler(nsp, socket);
+                });
+            }
+        );
     }
 
     async connectToDb(url, options = {}) {

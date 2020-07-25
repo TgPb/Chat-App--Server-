@@ -93,9 +93,9 @@ class User {
 
         if (!user) throw new NotFoundError('User not found');
 
-        const { name, surname, icon, chats } = user;
+        const { name, surname, icon, chats, email, password, salt } = user;
 
-        user = new User({ _id, name, surname, icon, chats });
+        user = new User({ _id, name, surname, icon, chats, email, password, salt });
 
         return user;
     }

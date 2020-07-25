@@ -9,6 +9,7 @@ const chatsEvents = {
     'PARTICIPANT_OFFLINE': 'PARTICIPANT_OFFLINE',
     'NEW_MESSAGE': 'NEW_MESSAGE',
     'SEND_MESSAGE': 'SEND_MESSAGE',
+    'SEND_MESSAGE_ERROR': 'SEND_MESSAGE_ERROR',
 };
 
 module.exports = chatsEvents;
